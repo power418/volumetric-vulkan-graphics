@@ -28,12 +28,10 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake")
 include(CompilerOptions)
 include(Dependencies)
 
-if(WIN32)
-  find_package(OpenGL REQUIRED)
-elseif(NOT APPLE)
-  find_package(X11 REQUIRED)
-else()
+if(APPLE)
   enable_language(OBJCXX)
+elseif(UNIX)
+  find_package(X11 REQUIRED)
 endif()
 
 add_executable(${PROJECT_NAME} main.cpp)
@@ -42,6 +40,18 @@ target_include_directories(${PROJECT_NAME}
   PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
 )
+
+if(Vulkan_INCLUDE_DIRS)
+  target_include_directories(${PROJECT_NAME}
+    PRIVATE
+      ${Vulkan_INCLUDE_DIRS}
+  )
+elseif(Vulkan_INCLUDE_DIR)
+  target_include_directories(${PROJECT_NAME}
+    PRIVATE
+      "${Vulkan_INCLUDE_DIR}"
+  )
+endif()
 
 file(GLOB ALL_INCLUDE_ITEMS
   CONFIGURE_DEPENDS
@@ -64,7 +74,6 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE
   imgui::imgui
   glm::glm
-  OpenGL::GL
   Vulkan::Vulkan
 )
 

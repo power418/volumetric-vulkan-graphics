@@ -1,8 +1,9 @@
 CompileFlags:
-  CompilationDatabase: Ancestors
+  CompilationDatabase: build/windows-x64-makefile-debug
   Add:
     - -std=c++17
     - -I.
+    - -IC:/VulkanSDK/1.4.350.0/Include
 ---
 If:
   PathMatch: .*\.h$

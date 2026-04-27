@@ -20,10 +20,10 @@
       }
     },
     {
-      "name": "base-ninja",
+      "name": "base-makefile",
       "hidden": true,
       "inherits": "base",
-      "generator": "Ninja"
+      "generator": "Unix Makefiles"
     },
     {
       "name": "base-msvc",
@@ -60,10 +60,10 @@
       }
     },
     {
-      "name": "windows-x64-ninja-debug",
+      "name": "windows-x64-makefile-debug",
       "displayName": "Windows Debug (Ninja)",
       "description": "Single-config Debug build for clangd compile_commands.json on Windows.",
-      "inherits": "base-ninja",
+      "inherits": "base-makefile",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -74,10 +74,10 @@
       }
     },
     {
-      "name": "windows-x64-ninja-release",
+      "name": "windows-x64-makefile-release",
       "displayName": "Windows Release (Ninja)",
       "description": "Single-config Release build for clangd compile_commands.json on Windows.",
-      "inherits": "base-ninja",
+      "inherits": "base-makefile",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -91,7 +91,7 @@
     {
       "name": "linux-debug",
       "displayName": "Linux Debug (Ninja)",
-      "inherits": "base-ninja",
+      "inherits": "base-makefile",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -104,7 +104,7 @@
     {
       "name": "linux-release",
       "displayName": "Linux Release (Ninja)",
-      "inherits": "base-ninja",
+      "inherits": "base-makefile",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -118,7 +118,7 @@
     {
       "name": "linux-mingw-base",
       "hidden": true,
-      "inherits": "base-ninja",
+      "inherits": "base-makefile",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -149,7 +149,7 @@
     {
       "name": "macos-debug",
       "displayName": "macOS Debug (Ninja)",
-      "inherits": "base-ninja",
+      "inherits": "base-makefile",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -162,7 +162,7 @@
     {
       "name": "macos-release",
       "displayName": "macOS Release (Ninja)",
-      "inherits": "base-ninja",
+      "inherits": "base-makefile",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -188,14 +188,14 @@
       "configuration": "Release"
     },
     {
-      "name": "windows-x64-ninja-debug",
+      "name": "windows-x64-makefile-debug",
       "displayName": "Build Windows Debug (Ninja)",
-      "configurePreset": "windows-x64-ninja-debug"
+      "configurePreset": "windows-x64-makefile-debug"
     },
     {
-      "name": "windows-x64-ninja-release",
+      "name": "windows-x64-makefile-release",
       "displayName": "Build Windows Release (Ninja)",
-      "configurePreset": "windows-x64-ninja-release"
+      "configurePreset": "windows-x64-makefile-release"
     },
     {
       "name": "linux-debug",
