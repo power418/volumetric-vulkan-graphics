@@ -1,5 +1,5 @@
 /*
-  vk_volumetric -- Cross-platform Volumetric Vulkan Graphics
+  simulation volumetric engine -- Cross-platform Volumetric Vulkan Graphics
   July 2026
 
   Copyright (C) 2026 power418
@@ -32,17 +32,31 @@
 #include <vector>
 #include <fstream>
 
-#include <platform/fonts.h>
-#include <platform/platform.h>
 #include <vulkan/vulkan.h>
 
-#include <constant/shell.h>
+#include <platform/constant/shell.h>
+#include <platform/target.h>
 #include <utils/logger.h>
 
 /**
+ * @file main.cpp
+ * @brief Application Entry Point & Cross-Platform Window Creation
  *
+ * This file serves as the main entry point for the Volumetric Vulkan Graphics application.
+ * It contains the platform-specific windowing setup and event loop implementation.
+ * 
+ * To ensure the application runs natively across different operating systems without 
+ * relying on external windowing libraries (like GLFW or SDL), this file uses conditional 
+ * compilation (macros) to switch between different OS APIs:
  *
- * */
+ * - `_WIN32` / `_WIN64` : Compiles the Windows (Win32 API) implementation. Uses `WinMain`, `HWND`, and `WNDCLASSEXW`.
+ * - `__APPLE__`         : Compiles the macOS (Cocoa) implementation. Uses Objective-C (`NSApplication`, `AppDelegate`).
+ * - `#else` (Unix/X11)  : Fallback for Linux and other Unix-like systems. Uses raw X11/Xlib (`Display*`, `Window`).
+ */
+
+// ==============================================================================
+// WIN32 / WINDOWS IMPLEMENTATION
+// ==============================================================================
 #if defined(_WIN32) || defined(_WIN64)
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -65,7 +79,7 @@ int WINAPI WinMain (HINSTANCE hInst,
 {
 #if defined (WR_DEBUG_CONSOLE)
   OpenConsole<ConsoleMode::AllocNew>();
-  WR_LOG_INFO("[INFO] Windows debug console is running!");
+  WR_LOG_INFO("Windows debug console is running!");
 #endif
 
   const wchar_t CLASS_NAME[] = L"VolumetricVulkanClass";
@@ -99,7 +113,7 @@ int WINAPI WinMain (HINSTANCE hInst,
 
   ShowWindow(hwnd, showCmd);
 
-  WR_LOG_INFO("[INFO] Win32 window created successfully. Close the window to exit.");
+  WR_LOG_INFO("Win32 window created successfully. Close the window to exit.");
 
   MSG msg = {};
   while (GetMessage(&msg, NULL, 0, 0) > 0) {
@@ -107,10 +121,13 @@ int WINAPI WinMain (HINSTANCE hInst,
     DispatchMessage(&msg);
   }
 
-  WR_LOG_INFO("[INFO] Window ditutup. Menghentikan aplikasi...");
+  WR_LOG_INFO("Window ditutup. Menghentikan aplikasi...");
 
   return 0;
 }
+// ==============================================================================
+// MACOS (COCOA) IMPLEMENTATION
+// ==============================================================================
 #elif defined(__APPLE__)
 
 // --- Objective-C Class Interface untuk App Delegate ---
@@ -123,7 +140,7 @@ int WINAPI WinMain (HINSTANCE hInst,
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-    WR_LOG_INFO("[INFO] Aplikasi berjalan! Membuat window Cocoa...");
+    WR_LOG_INFO("Aplikasi berjalan! Membuat window Cocoa...");
 
     NSRect frame = NSMakeRect(0, 0, 800, 600);
     NSUInteger styleMask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
@@ -138,7 +155,7 @@ int WINAPI WinMain (HINSTANCE hInst,
     [_window center];
     [_window makeKeyAndOrderFront:nil];
     
-    WR_LOG_INFO("[INFO] Cocoa window created successfully.");
+    WR_LOG_INFO("Cocoa window created successfully.");
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(id)sender {
@@ -148,17 +165,20 @@ int WINAPI WinMain (HINSTANCE hInst,
 @end
 
 int main(int argc, const char * argv[]) {
-    WR_LOG_INFO("[INFO] Inisialisasi NSApplication...");
+    WR_LOG_INFO("Inisialisasi NSApplication...");
     @autoreleasepool {
         id app = [NSApplication sharedApplication];
         AppDelegate *delegate = [[AppDelegate alloc] init];
         [app setDelegate:delegate];
         [app run];
     }
-    WR_LOG_INFO("[INFO] Window ditutup. Menghentikan aplikasi...");
+    WR_LOG_INFO("Window ditutup. Menghentikan aplikasi...");
     return 0;
 }
 
+// ==============================================================================
+// LINUX / UNIX (X11) IMPLEMENTATION
+// ==============================================================================
 #else
 int main(int argc, char **argv) {
 #if defined (WR_DEBUG_CONSOLE)
@@ -189,7 +209,7 @@ int main(int argc, char **argv) {
   bool running = true;
   XEvent event;
 
-  WR_LOG_INFO("[INFO] X11 window created successfully. Close the window to exit.");
+  WR_LOG_INFO("X11 window created successfully. Close the window to exit.");
 
   while (running) {
     XNextEvent(display, &event);

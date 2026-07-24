@@ -22,3 +22,4 @@
 #  define PLATFORM_COLOR_WHITE 0xFFFFFF
 #endif
 
+#include <fonts.h>

@@ -65,7 +65,15 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
+#include <cassert>
+#include <stdexcept>
 
+#if defined (__unix__) || defined (__linux__) || defined (__APPLE__)
+#include <unistd.h>
+#endif
 #if defined(__has_include)
 # if __has_include(<source_location>)
 #   include <source_location>
@@ -80,6 +88,29 @@
 #ifndef __has_builtin
 # define __has__has_builtin(x) 0
 #endif
+
+// ANSI Escape Codes untuk mewarnai output terminal (Unix/Linux/macOS & Windows 10+)
+#define CONSOLE_COLOR_RESET   "\033[0m"
+#define CONSOLE_COLOR_BLACK   "\033[30m"
+#define CONSOLE_COLOR_RED     "\033[31m"
+#define CONSOLE_COLOR_GREEN   "\033[32m"
+#define CONSOLE_COLOR_YELLOW  "\033[33m"
+#define CONSOLE_COLOR_BLUE    "\033[34m"
+#define CONSOLE_COLOR_MAGENTA "\033[35m"
+#define CONSOLE_COLOR_CYAN    "\033[36m"
+#define CONSOLE_COLOR_WHITE   "\033[37m"
+
+// Bold Colors
+#define CONSOLE_COLOR_BOLD_RED    "\033[1;31m"
+#define CONSOLE_COLOR_BOLD_GREEN  "\033[1;32m"
+#define CONSOLE_COLOR_BOLD_YELLOW "\033[1;33m"
+#define CONSOLE_COLOR_BOLD_BLUE   "\033[1;34m"
+
+// Background Colors
+#define CONSOLE_BG_RED        "\033[41m"
+#define CONSOLE_BG_GREEN      "\033[42m"
+#define CONSOLE_BG_YELLOW     "\033[43m"
+#define CONSOLE_BG_BLUE       "\033[44m"
 
 /**
  * @brief Ordered severity values used to classify and filter log records.
@@ -159,28 +190,107 @@ bool OpenConsole()
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
 
+  // Enable Virtual Terminal Processing for ANSI colors
+  HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+  if (hOut != INVALID_HANDLE_VALUE)
+  {
+    DWORD dwMode = 0;
+    if (GetConsoleMode(hOut, &dwMode))
+    {
+      dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+      SetConsoleMode(hOut, dwMode);
+    }
+  }
+
   std::cout << "debug console opened successfully!" << "\n";
   return true;
 #elif defined (__unix__) || defined (__linux__) || defined (__APPLE__)
-  if (isatty(STDOUT_FILENO))
+  if constexpr (mode == ConsoleMode::AttachParent)
   {
-    std::cout << "debug console opened successfully!\n";
-    return true;
+    if (isatty(STDOUT_FILENO))
+    {
+      std::cout << "debug console attached!\n";
+      return true;
+    }
+    FILE* f_out = freopen("/dev/tty", "w", stdout);
+    FILE* f_err = freopen("/dev/tty", "w", stderr);
+    FILE* f_in  = freopen("/dev/tty", "r", stdin);
+
+    if (f_out && f_err && f_in)
+    {
+      std::cout.clear(); std::cin.clear(); std::cerr.clear();
+      std::cout << "debug console attached to tty!\n";
+      return true;
+    }
+    return false;
   }
-
-  FILE* f_out = freopen("/dev/tty", "w", stdout);
-  FILE* f_err = freopen("/dev/tty", "w", stderr);
-  FILE* f_in  = freopen("/dev/tty", "r", stdin);
-
-  if (f_out && f_err && f_in)
+  else
   {
-    std::cout.clear();
-    std::cin.clear();
-    std::cerr.clear();
-    std::cout << "debug console opened successfully!\n";
-    return true;
+    #if defined(__APPLE__)
+    // macOS: Use AppleScript to open Terminal.app and tail a temporary log file
+    const char* log_file = "/tmp/vk_volumetric_debug.log";
+    
+    // Clear old log file
+    FILE* clear_log = fopen(log_file, "w");
+    if (clear_log) fclose(clear_log);
+    
+    // Tell Terminal.app to open a new window and tail the log
+    (void)system("osascript -e 'tell app \"Terminal\" to do script \"clear && echo \\\"Volumetric Vulkan Debug Console\\\" && tail -f /tmp/vk_volumetric_debug.log\"'");
+    
+    // Redirect our output to the log file
+    FILE* f_out = freopen(log_file, "a", stdout);
+    FILE* f_err = freopen(log_file, "a", stderr);
+    
+    if (f_out && f_err) {
+      setvbuf(stdout, NULL, _IOLBF, 0);
+      setvbuf(stderr, NULL, _IOLBF, 0);
+      std::cout.clear(); std::cerr.clear();
+      std::cout << std::unitbuf; std::cerr << std::unitbuf;
+      std::cout << "macOS debug console opened successfully!\n";
+      return true;
+    }
+    return false;
+    #else
+    // Linux/Other Unix: AllocNew using fork, pipe, and xterm
+    int pipefd[2];
+    if (pipe(pipefd) == -1) return false;
+
+    pid_t pid = fork();
+    if (pid == -1) return false;
+
+    if (pid == 0) {
+      // Child process: Redirect stdin to pipe, then spawn terminal running 'cat'
+      close(pipefd[1]);
+      dup2(pipefd[0], STDIN_FILENO);
+
+      // Try xterm first, standard on almost all Unix systems
+      execlp("xterm", "xterm", "-T", "Volumetric Vulkan Debug Console", "-bg", "black", "-fg", "white", "-e", "cat", NULL);
+      // Fallback to gnome-terminal
+      execlp("gnome-terminal", "gnome-terminal", "--title=Debug Console", "--", "cat", NULL);
+      // Fallback to konsole
+      execlp("konsole", "konsole", "-e", "cat", NULL);
+      
+      exit(1); // Exit if no terminal emulator is found
+    } else {
+      // Parent process: Redirect our stdout/stderr to the pipe
+      close(pipefd[0]);
+      dup2(pipefd[1], STDOUT_FILENO);
+      dup2(pipefd[1], STDERR_FILENO);
+      
+      // Make C-style outputs line buffered
+      setvbuf(stdout, NULL, _IOLBF, 0);
+      setvbuf(stderr, NULL, _IOLBF, 0);
+
+      std::cout.clear();
+      std::cerr.clear();
+      std::cout << std::unitbuf;
+      std::cerr << std::unitbuf;
+      
+      std::cout << "Unix debug console opened successfully (spawned new terminal)!\n";
+      return true;
+    }
+    #endif
   }
-  return false;
 #else
   return false;
 #endif
@@ -190,7 +300,49 @@ bool OpenConsole()
 using Level = log_level;
 
 #ifndef NDEBUG
-    #define WR_LOG_INFO(msg) do { std::cout << msg << "\n"; std::cout.flush(); } while(0)
+    inline std::string GetLogTimestamp(const char* color) {
+        auto now = std::chrono::system_clock::now();
+        auto in_time_t = std::chrono::system_clock::to_time_t(now);
+        std::stringstream ss;
+        ss << "[" << color << std::put_time(std::localtime(&in_time_t), "%H:%M:%S") << CONSOLE_COLOR_RESET << "]";
+        return ss.str();
+    }
+
+    #define WR_LOG_TRACE(msg) do { std::cout << GetLogTimestamp(CONSOLE_COLOR_WHITE)    << "[" << CONSOLE_COLOR_WHITE    << "TRACE" << CONSOLE_COLOR_RESET << "] " << msg << "\n"; std::cout.flush(); } while(0)
+    #define WR_LOG_DEBUG(msg) do { std::cout << GetLogTimestamp(CONSOLE_COLOR_CYAN)     << "[" << CONSOLE_COLOR_CYAN     << "DEBUG" << CONSOLE_COLOR_RESET << "] " << msg << "\n"; std::cout.flush(); } while(0)
+    #define WR_LOG_INFO(msg)  do { std::cout << GetLogTimestamp(CONSOLE_COLOR_GREEN)    << "[" << CONSOLE_COLOR_GREEN    << "INFO"  << CONSOLE_COLOR_RESET << "]  " << msg << "\n"; std::cout.flush(); } while(0)
+    #define WR_LOG_WARN(msg)  do { std::cout << GetLogTimestamp(CONSOLE_COLOR_YELLOW)   << "[" << CONSOLE_COLOR_YELLOW   << "WARN"  << CONSOLE_COLOR_RESET << "]  " << msg << "\n"; std::cout.flush(); } while(0)
+    #define WR_LOG_ERR(msg)   do { std::cerr << GetLogTimestamp(CONSOLE_COLOR_RED)      << "[" << CONSOLE_COLOR_RED      << "ERROR" << CONSOLE_COLOR_RESET << "] " << msg << "\n"; std::cerr.flush(); } while(0)
+    #define WR_LOG_CRIT(msg)  do { std::cerr << GetLogTimestamp(CONSOLE_COLOR_BOLD_RED) << "[" << CONSOLE_COLOR_BOLD_RED << "CRIT"  << CONSOLE_COLOR_RESET << "]  " << msg << "\n"; std::cerr.flush(); } while(0)
 #else
-    #define WR_LOG_INFO(msg) do {} while(0)
+    #define WR_LOG_TRACE(msg) do {} while(0)
+    #define WR_LOG_DEBUG(msg) do {} while(0)
+    #define WR_LOG_INFO(msg)  do {} while(0)
+    #define WR_LOG_WARN(msg)  do {} while(0)
+    #define WR_LOG_ERR(msg)   do {} while(0)
+    #define WR_LOG_CRIT(msg)  do {} while(0)
 #endif
+
+// --- Assert & Exception Macros ---
+
+#ifndef NDEBUG
+    #define WR_ASSERT(condition, msg) \
+        do { \
+            if (!(condition)) { \
+                WR_LOG_CRIT("Assertion Failed: " << #condition << " | " << msg); \
+                assert(condition); \
+            } \
+        } while(0)
+#else
+    #define WR_ASSERT(condition, msg) do {} while(0)
+#endif
+
+#define WR_THROW(msg) \
+    do { \
+        std::stringstream __wr_throw_ss; \
+        __wr_throw_ss << msg; \
+        std::string __wr_throw_str = __wr_throw_ss.str(); \
+        WR_LOG_ERR(__wr_throw_str); \
+        throw std::runtime_error(__wr_throw_str); \
+    } while(0)
+

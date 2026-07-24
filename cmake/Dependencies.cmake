@@ -31,6 +31,7 @@ find_package(Vulkan REQUIRED)
 find_package(glm CONFIG QUIET)
 find_package(imgui CONFIG QUIET)
 find_package(GNUstep QUIET)
+find_package(GTest QUIET)
 
 if(NOT glm_FOUND)
   if(WR_FETCH_DEPS)
@@ -91,4 +92,20 @@ endif()
 
 if(TARGET imgui AND NOT TARGET imgui::imgui)
   add_library(imgui::imgui ALIAS imgui)
+endif()
+
+if(NOT GTest_FOUND AND NOT TARGET gtest)
+  if(WR_FETCH_DEPS)
+    message(STATUS "GTest not found. fetching GoogleTest...")
+    CPMAddPackage(
+      NAME googletest
+      GITHUB_REPOSITORY google/googletest
+      GIT_TAG v1.14.0
+      OPTIONS
+        "INSTALL_GTEST OFF"
+        "gtest_force_shared_crt ON"
+    )
+  else()
+    message(WARNING "GTest not found. install it or enable WR_FETCH_DEPS to support unit testing.")
+  endif()
 endif()
