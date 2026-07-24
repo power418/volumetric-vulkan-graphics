@@ -1,6 +1,8 @@
-# Volumetric Vulkan
+# Simulation Volumetric Sandbox
 
-Volumetric Vulkan is a C++17 Vulkan application scaffold. The project uses CMake presets for Windows, Linux, macOS, and optional Linux-to-Windows cross compilation with MinGW-w64.
+Simulation Volumetric Sandbox is a modular, cross-platform C++17 engine scaffold built for advanced graphics and audio simulations. The project features a unified driver architecture supporting multiple rendering backends (Vulkan, DirectX, Metal, and OpenGL) alongside a dynamic audio system powered by `miniaudio`.
+
+It utilizes modern CMake presets for seamless building across Windows, Linux, and macOS, including optional support for Linux-to-Windows cross-compilation via MinGW-w64 and native Objective-C++ (Cocoa/GNUstep) integration.
 
 ## Requirements
 
