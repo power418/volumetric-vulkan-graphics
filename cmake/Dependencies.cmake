@@ -30,6 +30,7 @@ endif()
 find_package(Vulkan REQUIRED)
 find_package(glm CONFIG QUIET)
 find_package(imgui CONFIG QUIET)
+find_package(GNUstep QUIET)
 
 if(NOT glm_FOUND)
   if(WR_FETCH_DEPS)

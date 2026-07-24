@@ -4,12 +4,19 @@ CompileFlags:
     - -std=c++17
     - -I.
     - -IC:/VulkanSDK/1.4.350.0/Include
+    - -I/home/ahmadzanisy/GNUstep/Library/Headers
+    - -DGNUSTEP
+    - -DGNUSTEP_BASE_LIBRARY=1
+    - -DGNU_RUNTIME=1
+    - -D_NATIVE_OBJC_EXCEPTIONS
+    - -fobjc-exceptions
+    - -fconstant-string-class=NSConstantString
 ---
 If:
   PathMatch: .*\.h$
 CompileFlags:
   Add:
-    - -xc++-header
+    - -xobjective-c++-header
 ---
 If:
   PathMatch: .*\.hpp$
@@ -22,3 +29,15 @@ If:
 CompileFlags:
   Add:
     - -xc++
+---
+If:
+  PathMatch: .*\.mm$
+CompileFlags:
+  Add:
+    - -xobjective-c++
+---
+If:
+  PathMatch: .*\.m$
+CompileFlags:
+  Add:
+    - -xobjective-c

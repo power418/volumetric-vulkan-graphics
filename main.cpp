@@ -1,98 +1,32 @@
-#if defined (_WIN32) || defined (_WIN64)
-#  ifndef UNICODE
-#    define UNICODE
-#  endif
-#  ifndef _UNICODE
-#    define _UNICODE
-#  endif
-#  ifndef NOMINMAX
-#    define NOMINMAX 
-#  endif
-#  ifndef WIN32_LEAN_AND_MEAN
-#    define WIN32_LEAN_AND_MEAN
-#  endif
-#include <windows.h>
-#include <consoleapi.h>
-#elif defined (__APPLE__)
-#import <Foundation/Foundation.h>
-#import <Cocoa/Cocoa.h>
-#elif defined (__unix__) || defined (__linux__)
-#include <X11/X11.h>
-#include <unistd.h>
-#endif
+/**
+ *
+ *
+ * 
+ *
+ * 
+ *
+ *
+ * */
 
 #include <cstdlib>
+#include <cstdio>
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <fstream>
 
-#if (defined (_WIN32) || defined (_WIN64)) && !defined (VK_USE_PLATFORM_WIN32_KHR)
-#  define VK_USE_PLATFORM_WIN32_KHR
-#endif
+#include <platform/platform.h>
 #include <vulkan/vulkan.h>
 
 #include <constant/shell.h>
+#include <utils/logger.h>
 
-enum class ConsoleMode 
-{
-  AllocNew,
-  AttachParent,
-};
-
-template<ConsoleMode mode =  ConsoleMode::AllocNew>
-bool OpenConsole()
-{
-#if defined (_WIN32) || defined (_WIN64)
-  constexpr const char* ConsoleOutputFile = "CONOUT$";
-  constexpr const char* ConsoleInputFile  = "CONIN$";
-
-  BOOL ok = FALSE;
-
-  if constexpr (mode == ConsoleMode::AttachParent)
-  {
-    ok = AttachConsole(ATTACH_PARENT_PROCESS);
-  }
-  else
-  {
-    ok = AllocConsole();
-  }
-
-  if(!ok)
-    return false; 
-
-  static std::ofstream console_out;
-  static std::ifstream console_input;
-  static std::ofstream console_error;
-
-  console_out.open(ConsoleOutputFile);
-  console_input.open(ConsoleInputFile);
-  console_error.open(ConsoleOutputFile);
-
-  if (!console_out.is_open() || !console_input.is_open() || !console_error.is_open())
-  {
-    FreeConsole();
-    return false;
-  }
-
-  std::cout.rdbuf(console_out.rdbuf());
-  std::cin.rdbuf(console_input.rdbuf());
-  std::cerr.rdbuf(console_error.rdbuf());
-
-  std::cout.clear();
-  std::cin.clear();
-  std::cerr.clear();
-
-  std::cout << std::unitbuf;
-  std::cerr << std::unitbuf;
-
-  std::cout << "debug console opened successfully!" << "\n";
-  return true;
-#endif
-  return false;
-}
-
+/**
+ *
+ *
+ * */
 #if defined(_WIN32)
 int WINAPI WinMain (HINSTANCE hInst, 
                     HINSTANCE hPrevInst, 
@@ -108,7 +42,58 @@ int WINAPI WinMain (HINSTANCE hInst,
 }
 #else
 int main(int argc, char **argv) {
-  std::cout << "Hello, World!" << "\n";
+#if defined (WR_DEBUG_CONSOLE)
+  OpenConsole<ConsoleMode::AllocNew>();
+  std::cout << "program is running successfully!\n";
+  std::cout.flush();
+#endif
+
+  Display* display = XOpenDisplay(nullptr);
+  if (display == nullptr) {
+    std::cerr << "Cannot open X11 display\n";
+    return 1;
+  }
+
+  int screen = DefaultScreen(display);
+  Window root = RootWindow(display, screen);
+
+  Window window = XCreateSimpleWindow(display, root, 10, 10, 800, 600, 1,
+                                      BlackPixel(display, screen), WhitePixel(display, screen));
+
+  XStoreName(display, window, "Volumetric Vulkan Graphics");
+
+  XSelectInput(display, window, ExposureMask | KeyPressMask | StructureNotifyMask);
+  XMapWindow(display, window);
+
+  Atom wmDeleteMessage = XInternAtom(display, "WM_DELETE_WINDOW", False);
+  XSetWMProtocols(display, window, &wmDeleteMessage, 1);
+
+  bool running = true;
+  XEvent event;
+
+  std::cout << "X11 window created successfully. Press any key or close the window to exit.\n";
+
+  while (running) {
+    XNextEvent(display, &event);
+
+    switch (event.type) {
+      case KeyPress:
+        running = false;
+        break;
+      case ClientMessage:
+        if (static_cast<Atom>(event.xclient.data.l[0]) == wmDeleteMessage) {
+          running = false;
+        }
+        break;
+      case DestroyNotify:
+        running = false;
+        break;
+    }
+  }
+
+  XDestroyWindow(display, window);
+  XCloseDisplay(display);
+
   return 0;
 }
 #endif

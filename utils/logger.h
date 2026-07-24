@@ -53,6 +53,7 @@
 
 #pragma once
 
+#include <cstdio>
 #include <cctype>
 #include <ctime>
 #include <cstdint>
@@ -105,6 +106,85 @@ enum class log_level {
   crit  = 5,
   off   = 6, 
 };
+
+enum class ConsoleMode 
+{
+  AllocNew,
+  AttachParent,
+};
+
+template<ConsoleMode mode =  ConsoleMode::AllocNew>
+bool OpenConsole()
+{
+#if defined (_WIN32) || defined (_WIN64)
+  constexpr const char* ConsoleOutputFile = "CONOUT$";
+  constexpr const char* ConsoleInputFile  = "CONIN$";
+
+  BOOL ok = FALSE;
+
+  if constexpr (mode == ConsoleMode::AttachParent)
+  {
+    ok = AttachConsole(ATTACH_PARENT_PROCESS);
+  }
+  else
+  {
+    ok = AllocConsole();
+  }
+
+  if(!ok)
+    return false; 
+
+  static std::ofstream console_out;
+  static std::ifstream console_input;
+  static std::ofstream console_error;
+
+  console_out.open(ConsoleOutputFile);
+  console_input.open(ConsoleInputFile);
+  console_error.open(ConsoleOutputFile);
+
+  if (!console_out.is_open() || !console_input.is_open() || !console_error.is_open())
+  {
+    FreeConsole();
+    return false;
+  }
+
+  std::cout.rdbuf(console_out.rdbuf());
+  std::cin.rdbuf(console_input.rdbuf());
+  std::cerr.rdbuf(console_error.rdbuf());
+
+  std::cout.clear();
+  std::cin.clear();
+  std::cerr.clear();
+
+  std::cout << std::unitbuf;
+  std::cerr << std::unitbuf;
+
+  std::cout << "debug console opened successfully!" << "\n";
+  return true;
+#elif defined (__unix__) || defined (__linux__) || defined (__APPLE__)
+  if (isatty(STDOUT_FILENO))
+  {
+    std::cout << "debug console opened successfully!\n";
+    return true;
+  }
+
+  FILE* f_out = freopen("/dev/tty", "w", stdout);
+  FILE* f_err = freopen("/dev/tty", "w", stderr);
+  FILE* f_in  = freopen("/dev/tty", "r", stdin);
+
+  if (f_out && f_err && f_in)
+  {
+    std::cout.clear();
+    std::cin.clear();
+    std::cerr.clear();
+    std::cout << "debug console opened successfully!\n";
+    return true;
+  }
+  return false;
+#else
+  return false;
+#endif
+}
 
 /// Short alias for APIs that prefer the `Level` name.
 using Level = log_level;
