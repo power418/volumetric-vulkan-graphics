@@ -6,6 +6,7 @@
 /Release/*
 /lib/*
 /bin/*
+/deps/*
 
 compile_commands.json
 

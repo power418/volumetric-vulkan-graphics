@@ -4,33 +4,33 @@
 
   Copyright (C) 2026 power418
 
-  Hello! This software is provided 'as-is' for personal, educational, and 
-  open-source purposes. The author won't be held liable for any damages 
+  Hello! This software is provided 'as-is' for personal, educational, and
+  open-source purposes. The author won't be held liable for any damages
   arising from the use of this code.
 
-  You are totally free to use, modify, and share this software, subject to 
+  You are totally free to use, modify, and share this software, subject to
   a few sensible restrictions:
 
-  1. Commercial sale of this software is strictly prohibited. This project 
-     uses (or will use) GPL-licensed components, so keeping it free and 
+  1. Commercial sale of this software is strictly prohibited. This project
+     uses (or will use) GPL-licensed components, so keeping it free and
      open is a must.
-  2. Please don't claim you wrote the original software. If you use it, 
+  2. Please don't claim you wrote the original software. If you use it,
      a little shout-out or acknowledgment would be highly appreciated!
-  3. If you modify the source code, please mark it clearly so people know 
+  3. If you modify the source code, please mark it clearly so people know
      it's not the original version.
   4. Don't remove or alter this notice from the source distribution.
 
   Happy coding!
 */
 
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
 
 #include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <fstream>
 
 #include <vulkan/vulkan.h>
 
@@ -42,16 +42,20 @@
  * @file main.cpp
  * @brief Application Entry Point & Cross-Platform Window Creation
  *
- * This file serves as the main entry point for the Volumetric Vulkan Graphics application.
- * It contains the platform-specific windowing setup and event loop implementation.
- * 
- * To ensure the application runs natively across different operating systems without 
- * relying on external windowing libraries (like GLFW or SDL), this file uses conditional 
- * compilation (macros) to switch between different OS APIs:
+ * This file serves as the main entry point for the Volumetric Vulkan Graphics
+ * application. It contains the platform-specific windowing setup and event loop
+ * implementation.
  *
- * - `_WIN32` / `_WIN64` : Compiles the Windows (Win32 API) implementation. Uses `WinMain`, `HWND`, and `WNDCLASSEXW`.
- * - `__APPLE__`         : Compiles the macOS (Cocoa) implementation. Uses Objective-C (`NSApplication`, `AppDelegate`).
- * - `#else` (Unix/X11)  : Fallback for Linux and other Unix-like systems. Uses raw X11/Xlib (`Display*`, `Window`).
+ * To ensure the application runs natively across different operating systems
+ * without relying on external windowing libraries (like GLFW or SDL), this file
+ * uses conditional compilation (macros) to switch between different OS APIs:
+ *
+ * - `_WIN32` / `_WIN64` : Compiles the Windows (Win32 API) implementation. Uses
+ * `WinMain`, `HWND`, and `WNDCLASSEXW`.
+ * - `__APPLE__`         : Compiles the macOS (Cocoa) implementation. Uses
+ * Objective-C (`NSApplication`, `AppDelegate`).
+ * - `#else` (Unix/X11)  : Fallback for Linux and other Unix-like systems. Uses
+ * raw X11/Xlib (`Display*`, `Window`).
  */
 
 // ==============================================================================
@@ -59,25 +63,23 @@
 // ==============================================================================
 #if defined(_WIN32) || defined(_WIN64)
 
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam,
+                            LPARAM lParam) {
   switch (uMsg) {
-    case WM_CLOSE:
-      DestroyWindow(hwnd);
-      return 0;
-    case WM_DESTROY:
-      PostQuitMessage(0);
-      return 0;
-    default:
-      return DefWindowProcW(hwnd, uMsg, wParam, lParam);
+  case WM_CLOSE:
+    DestroyWindow(hwnd);
+    return 0;
+  case WM_DESTROY:
+    PostQuitMessage(0);
+    return 0;
+  default:
+    return DefWindowProcW(hwnd, uMsg, wParam, lParam);
   }
 }
 
-int WINAPI WinMain (HINSTANCE hInst, 
-                    HINSTANCE hPrevInst, 
-                    PSTR nCmd,
-                    INT showCmd) 
-{
-#if defined (WR_DEBUG_CONSOLE)
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, PSTR nCmd,
+                   INT showCmd) {
+#if defined(WR_DEBUG_CONSOLE)
   OpenConsole<ConsoleMode::AllocNew>();
   WR_LOG_INFO("Windows debug console is running!");
 #endif
@@ -94,16 +96,16 @@ int WINAPI WinMain (HINSTANCE hInst,
 
   RegisterClassExW(&wc);
 
-  HWND hwnd = CreateWindowExW(
-      0,                              // Optional window styles
-      CLASS_NAME,                     // Window class
-      L"Volumetric Vulkan Graphics",  // Window text
-      WS_OVERLAPPEDWINDOW,            // Window style
-      CW_USEDEFAULT, CW_USEDEFAULT, 800, 600, // Size and position
-      NULL,                           // Parent window
-      NULL,                           // Menu
-      hInst,                          // Instance handle
-      NULL                            // Additional application data
+  HWND hwnd = CreateWindowExW(0,          // Optional window styles
+                              CLASS_NAME, // Window class
+                              L"Volumetric Vulkan Graphics", // Window text
+                              WS_OVERLAPPEDWINDOW,           // Window style
+                              CW_USEDEFAULT, CW_USEDEFAULT, 800,
+                              600,   // Size and position
+                              NULL,  // Parent window
+                              NULL,  // Menu
+                              hInst, // Instance handle
+                              NULL   // Additional application data
   );
 
   if (hwnd == NULL) {
@@ -132,7 +134,7 @@ int WINAPI WinMain (HINSTANCE hInst,
 
 // --- Objective-C Class Interface untuk App Delegate ---
 @interface AppDelegate : NSObject <NSApplicationDelegate> {
-    NSWindow *_window;
+  NSWindow *_window;
 }
 @end
 
@@ -140,40 +142,42 @@ int WINAPI WinMain (HINSTANCE hInst,
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-    WR_LOG_INFO("Aplikasi berjalan! Membuat window Cocoa...");
+  WR_LOG_INFO("Aplikasi berjalan! Membuat window Cocoa...");
 
-    NSRect frame = NSMakeRect(0, 0, 800, 600);
-    NSUInteger styleMask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
+  NSRect frame = NSMakeRect(0, 0, 800, 600);
+  NSUInteger styleMask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
+                         NSWindowStyleMaskResizable |
+                         NSWindowStyleMaskMiniaturizable;
 
-    _window = [[NSWindow alloc] initWithContentRect:frame
-                                          styleMask:styleMask
-                                            backing:NSBackingStoreBuffered
-                                              defer:NO];
-    [_window setBackgroundColor:PLATFORM_COLOR_WHITE];
+  _window = [[NSWindow alloc] initWithContentRect:frame
+                                        styleMask:styleMask
+                                          backing:NSBackingStoreBuffered
+                                            defer:NO];
+  [_window setBackgroundColor:PLATFORM_COLOR_WHITE];
 
-    [_window setTitle:@"Volumetric Vulkan Graphics"];
-    [_window center];
-    [_window makeKeyAndOrderFront:nil];
-    
-    WR_LOG_INFO("Cocoa window created successfully.");
+  [_window setTitle:@"Volumetric Vulkan Graphics"];
+  [_window center];
+  [_window makeKeyAndOrderFront:nil];
+
+  WR_LOG_INFO("Cocoa window created successfully.");
 }
 
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(id)sender {
-    return YES;
+  return YES;
 }
 
 @end
 
-int main(int argc, const char * argv[]) {
-    WR_LOG_INFO("Inisialisasi NSApplication...");
-    @autoreleasepool {
-        id app = [NSApplication sharedApplication];
-        AppDelegate *delegate = [[AppDelegate alloc] init];
-        [app setDelegate:delegate];
-        [app run];
-    }
-    WR_LOG_INFO("Window ditutup. Menghentikan aplikasi...");
-    return 0;
+int main(int argc, const char *argv[]) {
+  WR_LOG_INFO("Inisialisasi NSApplication...");
+  @autoreleasepool {
+    id app = [NSApplication sharedApplication];
+    AppDelegate *delegate = [[AppDelegate alloc] init];
+    [app setDelegate:delegate];
+    [app run];
+  }
+  WR_LOG_INFO("Window ditutup. Menghentikan aplikasi...");
+  return 0;
 }
 
 // ==============================================================================
@@ -181,14 +185,15 @@ int main(int argc, const char * argv[]) {
 // ==============================================================================
 #else
 int main(int argc, char **argv) {
-#if defined (WR_DEBUG_CONSOLE)
+#if defined(WR_DEBUG_CONSOLE)
   OpenConsole<ConsoleMode::AllocNew>();
   WR_LOG_INFO("program is running successfully!");
 #endif
 
-  Display* display = XOpenDisplay(nullptr);
+  Display *display = XOpenDisplay(nullptr);
   if (display == nullptr) {
-    std::cerr << "Cannot open X11 display\n";
+    // std::cerr << "Cannot open X11 display\n";
+    WR_LOG_ERR("Cannot open X11 display\n");
     return 1;
   }
 
@@ -215,14 +220,14 @@ int main(int argc, char **argv) {
     XNextEvent(display, &event);
 
     switch (event.type) {
-      case ClientMessage:
-        if (static_cast<Atom>(event.xclient.data.l[0]) == wmDeleteMessage) {
-          running = false;
-        }
-        break;
-      case DestroyNotify:
+    case ClientMessage:
+      if (static_cast<Atom>(event.xclient.data.l[0]) == wmDeleteMessage) {
         running = false;
-        break;
+      }
+      break;
+    case DestroyNotify:
+      running = false;
+      break;
     }
   }
 

@@ -1,10 +1,13 @@
 CompileFlags:
-  CompilationDatabase: build/windows-x64-makefile-debug
+  CompilationDatabase: build/
   Add:
     - -std=c++17
-    - -I.
+    - -I/home/ahmadzanisy/Projects/volumetric-vulkan-graphics
+    - -I/home/ahmadzanisy/Projects/volumetric-vulkan-graphics/deps/cache/vulkanmemoryallocator/acb0/include
+    - -I/home/ahmadzanisy/Projects/volumetric-vulkan-graphics/deps/cache/miniaudio/ab9e
     - -IC:/VulkanSDK/1.4.350.0/Include
     - -I/home/ahmadzanisy/GNUstep/Library/Headers
+    - -I/usr/include/vkd3d
     - -DGNUSTEP
     - -DGNUSTEP_BASE_LIBRARY=1
     - -DGNU_RUNTIME=1
@@ -42,4 +45,4 @@ CompileFlags:
   Add:
     - -xobjective-c
     - "-I/usr/include/freetype2"
-    - "-I/usr/include/libpng16
+    - "-I/usr/include/libpng16"

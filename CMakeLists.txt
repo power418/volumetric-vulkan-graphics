@@ -11,32 +11,11 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(WIN32)
-  set(PLATFORM_OS "windows")
-elseif(USE_GNUSTEP)
-  set(PLATFORM_OS "gnustep")
-elseif(APPLE)
-  set(PLATFORM_OS "macos")
-elseif(UNIX)
-  set(PLATFORM_OS "linux")
-else()
-  set(PLATFORM_OS "unknown")
+include(cmake/OutputDirectories.cmake)
+
+if(MSVC)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
-
-set(OUT_DIR_BIN "${CMAKE_SOURCE_DIR}/bin")
-set(OUT_DIR_LIB "${CMAKE_SOURCE_DIR}/lib")
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUT_DIR_BIN}/$<CONFIG>/${PLATFORM_OS}")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OUT_DIR_LIB}/$<CONFIG>/${PLATFORM_OS}")
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OUT_DIR_LIB}/$<CONFIG>/${PLATFORM_OS}")
-
-foreach(config IN ITEMS Debug Release MinSizeRel RelWithDebInfo)
-  string(TOUPPER ${config} CONFIG_UPPER)
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${OUT_DIR_BIN}/${config}/${PLATFORM_OS}")
-  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${OUT_DIR_LIB}/${config}/${PLATFORM_OS}")
-  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${OUT_DIR_LIB}/${config}/${PLATFORM_OS}")
-endforeach()
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 option(WR_BUILD_APP "build the vulkan application target" OFF)
 option(WR_FETCH_DEPS "fetch ImGUI is not found" ON)
@@ -47,6 +26,9 @@ option(WR_DEBUG_CONSOLE "Enable debug console on Windows" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/deps")
+set(CPM_SOURCE_CACHE "${CMAKE_SOURCE_DIR}/deps/cache")
+
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake")
 
 set(SOURCE_FILES
@@ -55,6 +37,17 @@ set(SOURCE_FILES
 
 include(CompilerOptions)
 include(Dependencies)
+
+# ==============================================================================
+# Modular Workspace (Sub-Projects)
+# ==============================================================================
+# Blok ini akan mencari CMakeLists.txt di setiap folder modul utama (arsitektur engine)
+# dan menambahkannya ke dalam build system secara otomatis.
+foreach(module IN ITEMS core platform drivers shaders utils ui apps)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${module}/CMakeLists.txt")
+        add_subdirectory(${module})
+    endif()
+endforeach()
 
 if(APPLE OR USE_GNUSTEP)
   enable_language(OBJCXX)
@@ -136,6 +129,10 @@ if(WIN32)
     gdi32
     shell32
     ole32
+    d3d11
+    d3d12
+    dxgi
+    d3dcompiler
   )
 elseif(APPLE OR USE_GNUSTEP)
   target_compile_definitions(${PROJECT_NAME}
