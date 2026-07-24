@@ -147,6 +147,36 @@
       }
     },
     {
+      "name": "linux-gnustep-base",
+      "hidden": true,
+      "inherits": "base-makefile",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/gnustep.cmake"
+      }
+    },
+    {
+      "name": "linux-gnustep-debug",
+      "displayName": "macOS Debug from Linux (GNUstep + Ninja)",
+      "inherits": "linux-gnustep-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "linux-gnustep-release",
+      "displayName": "macOS Release from Linux (GNUstep + Ninja)",
+      "inherits": "linux-gnustep-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "WR_DEBUG_CONSOLE": "OFF"
+      }
+    },
+    {
       "name": "macos-debug",
       "displayName": "macOS Debug (Ninja)",
       "inherits": "base-makefile",
@@ -216,6 +246,16 @@
       "name": "linux-mingw-release",
       "displayName": "Build Windows Release from Linux",
       "configurePreset": "linux-mingw-release"
+    },
+    {
+      "name": "linux-gnustep-debug",
+      "displayName": "Build macOS Debug from Linux (GNUstep)",
+      "configurePreset": "linux-gnustep-debug"
+    },
+    {
+      "name": "linux-gnustep-release",
+      "displayName": "Build macOS Release from Linux (GNUstep)",
+      "configurePreset": "linux-gnustep-release"
     },
     {
       "name": "macos-debug",

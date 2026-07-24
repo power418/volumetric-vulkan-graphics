@@ -73,6 +73,44 @@ Arch Linux:
 sudo pacman -S base-devel cmake ninja git vulkan-headers vulkan-loader vulkan-tools libx11 mesa
 ```
 
+### GNUstep Setup (Optional for Cocoa/Objective-C++ on Linux)
+
+If you are experimenting with Cocoa (`.mm`) compilation on Linux, you must install GNUstep and its GUI dependencies.
+
+**Ubuntu or Debian:**
+```bash
+sudo apt install gnustep gnustep-devel libgnustep-base-dev libgnustep-gui-dev gobjc++
+```
+
+**Arch Linux (AUR):**
+```bash
+paru -S gnustep-make gnustep-base gnustep-gui gnustep-back
+```
+
+#### Troubleshooting GNUstep Installation (Arch Linux / AUR)
+
+When installing GNUstep and its dependencies from the AUR (like `gnustep-gui` or `gnustep-back`), you may encounter conflicts and build errors due to older dependencies such as `libpng` and `mozjpeg`.
+
+**1. `mozjpeg` vs `libjpeg-turbo` Conflict**
+If you are prompted with a conflict between `mozjpeg` and `libjpeg-turbo` when running `paru -S mozjpeg`, you have two options:
+- **Recommended**: Install `mozjpeg-git` instead, which often resolves outdated CMake and dependency issues automatically:
+  ```bash
+  paru -S mozjpeg-git
+  ```
+
+**2. `mozjpeg` CMake Build Error (makepkg)**
+If you still want to install `mozjpeg` (non-git) and encounter a CMake error during `build()` saying `Compatibility with CMake < 3.5 has been removed`, you must manually edit the PKGBUILD:
+- Run `paru -S mozjpeg`
+- When prompted `:: Proceed to review? [Y/n]:`, press **Y**.
+- Find the `build()` function and the `cmake` command.
+- Add the `-DCMAKE_POLICY_VERSION_MINIMUM=3.5` argument to the cmake command. For example:
+  ```bash
+  cmake -B build -S "$srcdir/$pkgname-$pkgver" \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        ...
+  ```
+- Save the file and close the editor to continue the build.
+
 Configure and build:
 
 ```bash

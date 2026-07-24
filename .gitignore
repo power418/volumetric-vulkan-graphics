@@ -4,6 +4,8 @@
 /cache/*
 /Debug/*
 /Release/*
+/lib/*
+/bin/*
 
 compile_commands.json
 
@@ -11,6 +13,7 @@ compile_commands.json
 *.lib
 *.dll
 
+*.d
 *.so
 *.a
 .DS_Store

@@ -188,3 +188,9 @@ bool OpenConsole()
 
 /// Short alias for APIs that prefer the `Level` name.
 using Level = log_level;
+
+#ifndef NDEBUG
+    #define WR_LOG_INFO(msg) do { std::cout << msg << "\n"; std::cout.flush(); } while(0)
+#else
+    #define WR_LOG_INFO(msg) do {} while(0)
+#endif

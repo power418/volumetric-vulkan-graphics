@@ -15,7 +15,7 @@ CompileFlags:
 If:
   PathMatch: .*\.h$
 CompileFlags:
-  Add:
+  Add: 
     - -xobjective-c++-header
 ---
 If:
@@ -41,3 +41,5 @@ If:
 CompileFlags:
   Add:
     - -xobjective-c
+    - "-I/usr/include/freetype2"
+    - "-I/usr/include/libpng16
