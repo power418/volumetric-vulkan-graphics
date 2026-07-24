@@ -19,5 +19,3 @@ compile_commands.json
 *.a
 .DS_Store
 
-
-*.txt

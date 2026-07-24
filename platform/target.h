@@ -22,4 +22,10 @@
 #  define PLATFORM_COLOR_WHITE 0xFFFFFF
 #endif
 
-#include <fonts.h>
+#include "fonts.h"
+
+// Dummy file to ensure the platform_driver static library has at least one source file.
+// You can remove this once you add actual .cpp files to the platform module.
+namespace platform {
+    void initialize_platform() {}
+}
